@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email_masked String
+  kyc_level    String
+  created_at   DateTime @default(now())
+
+  // Relations
+  cards        Card[]
+  accounts     Account[]
+  transactions Transaction[]
+  alerts       Alert[]
+  cases        Case[]
+}
+
+model Card {
+  id          Int      @id @default(autoincrement())
+  customer_id Int
+  last4       String
+  network     String
+  status      String
+  created_at  DateTime @default(now())
+
+  customer     Customer      @relation(fields: [customer_id], references: [id])
+  transactions Transaction[]
+}
+
+model Account {
+  id            Int    @id @default(autoincrement())
+  customer_id   Int
+  balance_cents Int
+  currency      String
+
+  customer Customer @relation(fields: [customer_id], references: [id])
+}
+
+model Transaction {
+  id           Int      @id @default(autoincrement())
+  customer_id  Int
+  card_id      Int?
+  mcc          String
+  merchant     String
+  amount_cents Int
+  currency     String
+  ts           DateTime
+  device_id    String?
+  country      String?
+  city         String?
+
+  customer Customer @relation(fields: [customer_id], references: [id])
+  card     Card?    @relation(fields: [card_id], references: [id])
+  alerts   Alert[]
+  cases    Case[]
+
+  @@index([customer_id, ts(sort: Desc)])
+  @@index([merchant])
+  @@index([mcc])
+  @@index([customer_id, merchant])
+}
+
+model Alert {
+  id             Int      @id @default(autoincrement())
+  customer_id    Int
+  suspect_txn_id Int
+  created_at     DateTime @default(now())
+  risk           String
+  status         String
+
+  customer    Customer    @relation(fields: [customer_id], references: [id])
+  suspect_txn Transaction @relation(fields: [suspect_txn_id], references: [id])
+  triage_runs TriageRun[]
+}
+
+model Case {
+  id          Int      @id @default(autoincrement())
+  customer_id Int
+  txn_id      Int?
+  type        String
+  status      String
+  reason_code String?
+  created_at  DateTime @default(now())
+
+  customer    Customer     @relation(fields: [customer_id], references: [id])
+  transaction Transaction? @relation(fields: [txn_id], references: [id])
+  events      CaseEvent[]
+}
+
+model CaseEvent {
+  id           Int      @id @default(autoincrement())
+  case_id      Int
+  ts           DateTime
+  actor        String
+  action       String
+  payload_json Json
+
+  case Case @relation(fields: [case_id], references: [id])
+}
+
+model TriageRun {
+  id            Int       @id @default(autoincrement())
+  alert_id      Int
+  started_at    DateTime
+  ended_at      DateTime?
+  risk          String?
+  reasons       Json?
+  fallback_used Boolean
+  latency_ms    Int
+
+  alert        Alert        @relation(fields: [alert_id], references: [id])
+  agent_traces AgentTrace[]
+}
+
+model AgentTrace {
+  run_id      Int
+  seq         Int
+  step        String
+  ok          Boolean
+  duration_ms Int
+  detail_json Json
+
+  triage_run TriageRun @relation(fields: [run_id], references: [id])
+
+  @@id([run_id, seq])
+}
+
+model KbDoc {
+  id           Int    @id @default(autoincrement())
+  title        String
+  anchor       String
+  content_text String
+}
+
+model Policy {
+  id           Int    @id @default(autoincrement())
+  code         String
+  title        String
+  content_text String
+}
