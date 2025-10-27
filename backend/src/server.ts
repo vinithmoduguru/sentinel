@@ -1,23 +1,28 @@
-import express from "express"
+import app from "./app.js"
 import dotenv from "dotenv"
 
 dotenv.config()
 
-const app = express()
-
-app.get("/", (_req, res) => {
-  res.json({ ok: true, uptime: process.uptime() })
-})
-
-app.get("/healthz", (_req, res) => {
-  res.sendStatus(200)
-})
-
 const port = Number(process.env.PORT ?? 4000)
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   // eslint-disable-next-line no-console
-  console.log(`Backend listening on http://localhost:${port}`)
+  console.log(`🚀 Backend listening on http://localhost:${port}`)
 })
 
-export default app
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM signal received: closing HTTP server")
+  server.close(() => {
+    console.log("HTTP server closed")
+  })
+})
+
+process.on("SIGINT", () => {
+  console.log("SIGINT signal received: closing HTTP server")
+  server.close(() => {
+    console.log("HTTP server closed")
+  })
+})
+
+export default server

@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -57,7 +58,7 @@ model Transaction {
   merchant     String
   amount_cents Int
   currency     String
-  ts           DateTime
+  ts           DateTime @default(now())
   device_id    String?
   country      String?
   city         String?
@@ -103,7 +104,7 @@ model Case {
 model CaseEvent {
   id           Int      @id @default(autoincrement())
   case_id      Int
-  ts           DateTime
+  ts           DateTime @default(now())
   actor        String
   action       String
   payload_json Json
