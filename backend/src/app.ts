@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from "express"
 import dotenv from "dotenv"
 import ingestRoutes from "./routes/ingest.js"
+import customerRoutes from "./routes/customer.js"
 // import { errorHandler } from "./middleware/errorHandler.js"
 
 // Load environment variables
@@ -23,6 +24,7 @@ app.get("/healthz", (_req: Request, res: Response) => {
 
 // API Routes
 app.use("/api/ingest", ingestRoutes)
+app.use("/api", customerRoutes)
 
 // Error handling middleware (must be last)
 // app.use(errorHandler)
