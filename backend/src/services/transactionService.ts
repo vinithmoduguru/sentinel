@@ -51,7 +51,13 @@ export const listCustomerTransactions = async (
   customerId: number,
   opts: ListTransactionsOptions
 ) => {
-  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200)
+  // If limit is explicitly provided, use it (capped at 200)
+  // If not provided, default to 50 for regular queries
+  // But allow undefined to mean "no limit" when needed
+  const limit =
+    opts.limit !== undefined
+      ? Math.min(Math.max(opts.limit, 1), 200)
+      : undefined
 
   // Base where clause
   const where: Prisma.TransactionWhereInput = {
@@ -79,12 +85,12 @@ export const listCustomerTransactions = async (
 
   const items = await prisma.transaction.findMany({
     where,
-    orderBy: [{ ts: "desc" }, { id: "desc" }],
-    take: limit,
+    orderBy: [{ ts: "desc" }],
+    ...(limit !== undefined && { take: limit }),
   })
 
   let nextCursor: string | undefined
-  if (items.length === limit) {
+  if (limit !== undefined && items.length === limit) {
     const last = items[items.length - 1] as Transaction
     nextCursor = encodeCursor({ ts: last.ts.toISOString(), id: last.id })
   }
