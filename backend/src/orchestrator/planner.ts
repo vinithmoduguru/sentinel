@@ -1,13 +1,14 @@
 import { runAgent } from "./executor.js"
 import { riskSignals } from "../agents/riskSignals.agent.js"
 import { insights } from "../agents/insights.agent.js"
+import { kb } from "../agents/kb.agent.js"
 import { logger } from "../utils/logger.js"
 
 export async function runPlan(runId: string, customerId: string, context: any) {
   const plan = [
     { name: "insights", fn: insights },
     { name: "riskSignals", fn: riskSignals },
-    // { name: "kbLookup", fn: kbLookup },
+    { name: "kbLookup", fn: kb },
     // { name: "summarizer", fn: summarizer },
     // { name: "compliance", fn: compliance },
   ]
