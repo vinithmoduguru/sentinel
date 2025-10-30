@@ -20,11 +20,18 @@ export const actionBlockedCounter = new client.Counter({
   labelNames: ["policy"],
 })
 
+export const rateLimitBlockedCounter = new client.Counter({
+  name: "rate_limit_block_total",
+  help: "Number of requests blocked by the rate limiter",
+})
+
 register.registerMetric(toolCallCounter)
 register.registerMetric(latencyHistogram)
 register.registerMetric(actionBlockedCounter)
+register.registerMetric(rateLimitBlockedCounter)
 
 export function incrementMetric(name: string, labels: Record<string, string>) {
   if (name === "tool_call_total") toolCallCounter.inc(labels)
   if (name === "action_blocked_total") actionBlockedCounter.inc(labels)
+  if (name === "rate_limit_block_total") rateLimitBlockedCounter.inc()
 }
