@@ -54,6 +54,7 @@ model Transaction {
   id           Int      @id @default(autoincrement())
   customer_id  Int
   card_id      Int?
+  txn_id       String?
   mcc          String
   merchant     String
   amount_cents Int
@@ -68,6 +69,7 @@ model Transaction {
   alerts   Alert[]
   cases    Case[]
 
+  @@unique([customer_id, txn_id])
   @@index([customer_id, ts(sort: Desc)])
   @@index([merchant])
   @@index([mcc])
