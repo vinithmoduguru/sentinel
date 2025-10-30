@@ -1,5 +1,9 @@
 import type { Prisma, Transaction } from "@prisma/client"
 import prisma from "../config/database.js"
+import {
+  decodeCursorBase64Url,
+  encodeCursorBase64Url,
+} from "../utils/pagination.js"
 import type { TransactionInput } from "../schemas/transactions.schema.js"
 
 export const ingestTransactions = async (transactions: TransactionInput[]) => {
@@ -26,18 +30,12 @@ export const ingestTransactions = async (transactions: TransactionInput[]) => {
 // Cursor encoding/decoding helpers for keyset pagination
 type CursorPayload = { ts: string; id: number }
 
-const encodeCursor = (payload: CursorPayload) =>
-  Buffer.from(JSON.stringify(payload)).toString("base64url")
+const encodeCursor = (payload: CursorPayload) => encodeCursorBase64Url(payload)
 
 const decodeCursor = (cursor: string): CursorPayload | null => {
-  try {
-    const json = Buffer.from(cursor, "base64url").toString("utf8")
-    const obj = JSON.parse(json) as CursorPayload
-    if (!obj.ts || typeof obj.id !== "number") return null
-    return obj
-  } catch {
-    return null
-  }
+  const obj = decodeCursorBase64Url<CursorPayload>(cursor)
+  if (!obj || !obj.ts || typeof obj.id !== "number") return null
+  return obj
 }
 
 export type ListTransactionsOptions = {

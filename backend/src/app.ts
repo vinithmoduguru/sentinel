@@ -6,6 +6,7 @@ import triageRoutes from "./routes/triage.routes.js"
 import kbRoutes from "./routes/kb.routes.js"
 import actionRoutes from "./routes/actions.routes.js"
 import dashboardRoutes from "./routes/dashboard.routes.js"
+import alertsRoutes from "./routes/alerts.routes.js"
 // import { errorHandler } from "./middleware/errorHandler.js"
 
 // Load environment variables
@@ -31,6 +32,7 @@ app.use("/api/ingest", ingestRoutes)
 app.use("/api/triage", triageRoutes)
 app.use("/api/kb", kbRoutes)
 app.use("/api/dashboard", dashboardRoutes)
+app.use("/api/alerts", alertsRoutes)
 app.use("/api", customerRoutes)
 app.use("/api/action", actionRoutes)
 
