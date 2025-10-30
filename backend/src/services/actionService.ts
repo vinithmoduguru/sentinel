@@ -4,22 +4,23 @@ import { incrementMetric } from "../utils/metrics.js"
 type FreezeCardInput = { cardId: number; otp?: string }
 type OpenDisputeInput = { txnId: number; reasonCode: string; confirm: boolean }
 
-type ActionContext = { requestId?: string }
+type Role = "agent" | "lead"
+type ActionContext = { requestId?: string; role?: Role }
 
 export async function handleFreezeCard(
   input: FreezeCardInput,
   ctx: ActionContext
 ) {
   const { cardId, otp } = input
-  const { requestId } = ctx
+  const { requestId, role } = ctx
 
-  if (!otp) {
+  if (!otp && role !== "lead") {
     incrementMetric("action_blocked_total", { policy: "otp_required" })
     const pending = { status: "PENDING_OTP", requestId: requestId || null }
     return pending
   }
 
-  if (otp !== "123456") {
+  if (otp && otp !== "123456") {
     return { status: "INVALID_OTP", requestId: requestId || null }
   }
 
@@ -67,9 +68,9 @@ export async function handleOpenDispute(
   ctx: ActionContext
 ) {
   const { txnId, reasonCode, confirm } = input
-  const { requestId } = ctx
+  const { requestId, role } = ctx
 
-  if (!confirm) {
+  if (!confirm && role !== "lead") {
     // Soft-block until confirm is true
     incrementMetric("action_blocked_total", { policy: "confirmation_required" })
     const resp = {

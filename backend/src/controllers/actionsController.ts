@@ -25,6 +25,7 @@ export const freezeCardHandler = async (
     const body = freezeCardSchema.parse(req.body)
     const result = await handleFreezeCard(body, {
       requestId: String(req.headers["x-request-id"] || ""),
+      role: req.auth?.role,
     })
     res.status(200).json(result)
   } catch (err) {
@@ -41,6 +42,7 @@ export const openDisputeHandler = async (
     const body = openDisputeSchema.parse(req.body)
     const result = await handleOpenDispute(body, {
       requestId: String(req.headers["x-request-id"] || ""),
+      role: req.auth?.role,
     })
     res.status(200).json(result)
   } catch (err) {
