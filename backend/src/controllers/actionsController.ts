@@ -22,10 +22,8 @@ export const freezeCardHandler = async (
   next: NextFunction
 ) => {
   try {
-    const idemKey = (req.header("Idempotency-Key") || "").trim()
     const body = freezeCardSchema.parse(req.body)
     const result = await handleFreezeCard(body, {
-      idemKey,
       requestId: String(req.headers["x-request-id"] || ""),
     })
     res.status(200).json(result)
@@ -40,10 +38,8 @@ export const openDisputeHandler = async (
   next: NextFunction
 ) => {
   try {
-    const idemKey = (req.header("Idempotency-Key") || "").trim()
     const body = openDisputeSchema.parse(req.body)
     const result = await handleOpenDispute(body, {
-      idemKey,
       requestId: String(req.headers["x-request-id"] || ""),
     })
     res.status(200).json(result)

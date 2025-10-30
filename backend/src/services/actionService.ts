@@ -1,28 +1,21 @@
 import prisma from "../config/database.js"
-import { getIdempotentResponse, setIdempotentResponse } from "../utils/redis.js"
 import { incrementMetric } from "../utils/metrics.js"
 
 type FreezeCardInput = { cardId: number; otp?: string }
 type OpenDisputeInput = { txnId: number; reasonCode: string; confirm: boolean }
 
-type ActionContext = { idemKey?: string; requestId?: string }
+type ActionContext = { requestId?: string }
 
 export async function handleFreezeCard(
   input: FreezeCardInput,
   ctx: ActionContext
 ) {
   const { cardId, otp } = input
-  const { idemKey, requestId } = ctx
-
-  if (idemKey) {
-    const cached = await getIdempotentResponse("freeze-card", idemKey)
-    if (cached) return cached
-  }
+  const { requestId } = ctx
 
   if (!otp) {
     incrementMetric("action_blocked_total", { policy: "otp_required" })
     const pending = { status: "PENDING_OTP", requestId: requestId || null }
-    if (idemKey) await setIdempotentResponse("freeze-card", idemKey, pending)
     return pending
   }
 
@@ -66,7 +59,6 @@ export async function handleFreezeCard(
     return { status: "FROZEN", requestId: requestId || null }
   })
 
-  if (idemKey) await setIdempotentResponse("freeze-card", idemKey, result)
   return result
 }
 
@@ -75,12 +67,7 @@ export async function handleOpenDispute(
   ctx: ActionContext
 ) {
   const { txnId, reasonCode, confirm } = input
-  const { idemKey, requestId } = ctx
-
-  if (idemKey) {
-    const cached = await getIdempotentResponse("open-dispute", idemKey)
-    if (cached) return cached
-  }
+  const { requestId } = ctx
 
   if (!confirm) {
     // Soft-block until confirm is true
@@ -89,7 +76,6 @@ export async function handleOpenDispute(
       status: "CONFIRMATION_REQUIRED",
       requestId: requestId || null,
     }
-    if (idemKey) await setIdempotentResponse("open-dispute", idemKey, resp)
     return resp
   }
 
@@ -131,6 +117,5 @@ export async function handleOpenDispute(
     return { caseId: caseRecord.id, status: "OPEN" as const }
   })
 
-  if (idemKey) await setIdempotentResponse("open-dispute", idemKey, result)
   return result
 }
