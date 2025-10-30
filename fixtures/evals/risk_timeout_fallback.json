@@ -1,0 +1,14 @@
+{
+  "name": "Risk Timeout → Fallback",
+  "description": "When risk tool times out and retries exhaust, fallback is used.",
+  "cases": [
+    {
+      "id": "risk-timeout",
+      "category": "risk_timeout",
+      "input": { "triage": { "alertId": 2002, "customerId": 42, "simulate": { "riskSignals": "timeout" } } },
+      "expected": { "fallback_used": true, "risk": "low|medium" }
+    }
+  ]
+}
+
+

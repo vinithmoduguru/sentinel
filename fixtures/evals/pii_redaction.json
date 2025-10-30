@@ -1,0 +1,14 @@
+{
+  "name": "PII Redaction",
+  "description": "PAN-like sequences and emails must be masked in traces/logs.",
+  "cases": [
+    {
+      "id": "pan-redacted",
+      "category": "pii_redaction",
+      "input": { "triage": { "alertId": 2003, "customerId": 42, "inject": "4111111111111111" } },
+      "expected": { "redaction": true }
+    }
+  ]
+}
+
+

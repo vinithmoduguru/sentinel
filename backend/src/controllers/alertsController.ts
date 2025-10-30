@@ -16,6 +16,15 @@ export async function getAlertsHandler(req: Request, res: Response) {
     const where: any = {}
     if (parsed.status) where.status = parsed.status
     if (parsed.risk) where.risk = parsed.risk.toUpperCase()
+    if (parsed.from || parsed.to) {
+      where.created_at = {}
+      if (parsed.from) where.created_at.gte = parsed.from
+      if (parsed.to) {
+        const toDate = new Date(parsed.to)
+        toDate.setHours(23, 59, 59, 999)
+        where.created_at.lte = toDate
+      }
+    }
 
     // Keyset pagination
     let createdIdLtClause: any = undefined

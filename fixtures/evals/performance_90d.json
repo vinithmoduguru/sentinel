@@ -1,0 +1,14 @@
+{
+  "name": "Performance - 90d Transactions",
+  "description": "Ensure /customer/:id/transactions?last=90d p95 ≤ 100ms on large dataset.",
+  "cases": [
+    {
+      "id": "tx-90d-p95",
+      "category": "performance",
+      "input": { "customerId": 42, "range": "90d" },
+      "expected": { "p95_ms": "<=100" }
+    }
+  ]
+}
+
+

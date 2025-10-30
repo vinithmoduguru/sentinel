@@ -18,6 +18,7 @@ export const riskSignals: AgentFn = async (input) => {
   const devices = input.context?.devices || []
   const chargebacks = input.context?.chargebacks || []
   const profile = input.context?.profile
+  const suspectTxn = input.context?.suspectTransaction
 
   if (!txns.length) {
     return {
@@ -39,7 +40,8 @@ export const riskSignals: AgentFn = async (input) => {
   const sorted = txns.sort(
     (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
   )
-  const first = sorted[0]!
+  // Prioritize analyzing the suspect transaction if available
+  const first = suspectTxn || sorted[0]!
   const burst = sorted.slice(0, 5)
   if (burst.length >= 3) {
     const t0 = burst[0]

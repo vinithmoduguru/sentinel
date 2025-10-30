@@ -22,6 +22,10 @@ export async function resetCircuit(agent: string) {
   await redis.del(key)
 }
 
+export async function closeCircuit(agent: string) {
+  return resetCircuit(agent)
+}
+
 // Idempotency helpers
 const IDEM_PREFIX = "idem:"
 

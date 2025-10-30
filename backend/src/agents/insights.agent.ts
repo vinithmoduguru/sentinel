@@ -9,6 +9,7 @@ type InsightsOutput = {
   categories: Array<{ name: string; pct: number }>
   monthlyTrend: Array<{ month: string; sum: number }>
   anomalies: Array<{ ts: string; z: number; note: string }>
+  ambiguousMerchants?: Array<{ group: string; merchants: string[] }>
   summary?: string
 }
 
@@ -139,11 +140,48 @@ export const insights: AgentFn = async (input) => {
         .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
     }
 
+    // 5. Detect Ambiguous Merchants: Find merchants with similar names
+    const ambiguousMerchants: Array<{ group: string; merchants: string[] }> = []
+    const merchantNames = Object.keys(merchantCounts)
+    const grouped = new Set<string>()
+    
+    for (let i = 0; i < merchantNames.length; i++) {
+      const m1 = merchantNames[i]
+      if (grouped.has(m1)) continue
+      
+      const similar: string[] = [m1]
+      for (let j = i + 1; j < merchantNames.length; j++) {
+        const m2 = merchantNames[j]
+        if (grouped.has(m2)) continue
+        
+        // Check for similarity: same prefix/suffix, or edit distance < 3
+        const commonPrefix = getCommonPrefix(m1.toLowerCase(), m2.toLowerCase())
+        const commonSuffix = getCommonSuffix(m1.toLowerCase(), m2.toLowerCase())
+        
+        if (
+          (commonPrefix.length >= 3 && commonPrefix.length >= Math.min(m1.length, m2.length) * 0.6) ||
+          (commonSuffix.length >= 3 && commonSuffix.length >= Math.min(m1.length, m2.length) * 0.6)
+        ) {
+          similar.push(m2)
+          grouped.add(m2)
+        }
+      }
+      
+      if (similar.length > 1) {
+        grouped.add(m1)
+        ambiguousMerchants.push({
+          group: similar[0],
+          merchants: similar,
+        })
+      }
+    }
+
     const baseOutput: InsightsOutput = {
       topMerchants,
       categories,
       monthlyTrend,
       anomalies,
+      ...(ambiguousMerchants.length > 0 && { ambiguousMerchants }),
     }
 
     // 5. Optional LLM explanation
@@ -229,6 +267,12 @@ function generateDeterministicSummary(output: InsightsOutput): string {
     )
   }
 
+  if (output.ambiguousMerchants && output.ambiguousMerchants.length > 0) {
+    parts.push(
+      `Disambiguation needed for ${output.ambiguousMerchants.length} merchant groups with ambiguous names`
+    )
+  }
+
   if (output.anomalies.length > 0) {
     parts.push(`Detected ${output.anomalies.length} spending anomaly/anomalies`)
   } else {
@@ -236,4 +280,24 @@ function generateDeterministicSummary(output: InsightsOutput): string {
   }
 
   return parts.join(". ") + "."
+}
+
+function getCommonPrefix(s1: string, s2: string): string {
+  let i = 0
+  while (i < s1.length && i < s2.length && s1[i] === s2[i]) {
+    i++
+  }
+  return s1.substring(0, i)
+}
+
+function getCommonSuffix(s1: string, s2: string): string {
+  let i = 0
+  while (
+    i < s1.length &&
+    i < s2.length &&
+    s1[s1.length - 1 - i] === s2[s2.length - 1 - i]
+  ) {
+    i++
+  }
+  return s1.substring(s1.length - i)
 }

@@ -1,0 +1,14 @@
+{
+  "name": "README (Eval Schema)",
+  "description": "Template for eval files; not an executable test suite.",
+  "cases": [
+    {
+      "id": "schema",
+      "category": "documentation",
+      "input": { "schema": { "file": { "name": "string", "description": "string", "cases": "EvalCase[]" }, "EvalCase": { "id": "string", "category": "string", "input": "object", "expected": "object" } } },
+      "expected": { "ok": true }
+    }
+  ]
+}
+
+

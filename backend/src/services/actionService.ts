@@ -65,9 +65,9 @@ export async function handleFreezeCard(
     })
 
     await logCaseEvent(tx, caseRecord.id, actor, "CARD_FROZEN", {
-      cardId: updated.id,
-      previousStatus: card.status,
-      newStatus: updated.status,
+          cardId: updated.id,
+          previousStatus: card.status,
+          newStatus: updated.status,
     })
 
     return { status: "FROZEN", requestId: requestId || null }
@@ -115,11 +115,11 @@ export async function handleOpenDispute(
     })
 
     await logCaseEvent(tx, caseRecord.id, actor, "DISPUTE_OPENED", {
-      txnId: txn.id,
-      reasonCode,
-      kbCitation: policy
-        ? { policyId: policy.id, code: policy.code, title: policy.title }
-        : null,
+          txnId: txn.id,
+          reasonCode,
+          kbCitation: policy
+            ? { policyId: policy.id, code: policy.code, title: policy.title }
+            : null,
     })
 
     return { caseId: caseRecord.id, status: "OPEN" as const }

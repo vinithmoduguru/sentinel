@@ -1,0 +1,14 @@
+{
+  "name": "Ambiguous Merchants",
+  "description": "Insights should provide disambiguation when merchants have similar names.",
+  "cases": [
+    {
+      "id": "ambiguous-merchant",
+      "category": "ambiguous_merchant",
+      "input": { "customerId": 42 },
+      "expected": { "summary_contains": ["ambiguous", "disambiguation"] }
+    }
+  ]
+}
+
+

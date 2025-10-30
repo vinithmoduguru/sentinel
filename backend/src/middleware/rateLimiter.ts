@@ -6,6 +6,7 @@ type RateLimiterOptions = {
   capacity?: number
   refillPerSecond?: number
   headerName?: string
+  keyGenerator?: (req: Request, headerName: string) => string
 }
 
 // Lua script implementing token bucket in Redis atomically
@@ -66,6 +67,13 @@ export function rateLimiter(options: RateLimiterOptions = {}) {
     process.env.RATE_LIMIT_RATE ?? options.refillPerSecond ?? 5
   )
   const headerName = options.headerName ?? "x-api-key"
+  const keyGenerator =
+    options.keyGenerator ??
+    ((req: Request, header: string) => {
+      const routeKey = `${req.method}:${req.baseUrl || req.path}`
+      const client = getClientId(req, header)
+      return `${client}:${routeKey}`
+    })
 
   return async function rateLimitMiddleware(
     req: Request,
@@ -73,8 +81,8 @@ export function rateLimiter(options: RateLimiterOptions = {}) {
     next: NextFunction
   ) {
     try {
-      const clientId = getClientId(req, headerName)
-      const key = `rate_limit:${clientId}`
+      const clientKey = keyGenerator(req, headerName)
+      const key = `rate_limit:${clientKey}`
       const nowMs = Date.now()
       const result = (await redis.eval(
         TOKEN_BUCKET_LUA,

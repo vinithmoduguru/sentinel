@@ -1,0 +1,21 @@
+{
+  "name": "Freeze Card - OTP Flow",
+  "description": "Validate OTP soft-block then success with correct OTP.",
+  "cases": [
+    {
+      "id": "freeze-otp-pending",
+      "category": "freeze_otp",
+      "input": { "action": "freeze-card", "payload": { "cardId": 1 } },
+      "expected": { "status": "PENDING_OTP" }
+    },
+    {
+      "id": "freeze-otp-success",
+      "category": "freeze_otp",
+      "input": {
+        "action": "freeze-card",
+        "payload": { "cardId": 1, "otp": "123456" }
+      },
+      "expected": { "status": "FROZEN" }
+    }
+  ]
+}

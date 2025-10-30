@@ -15,16 +15,52 @@ export async function runPlan(
   context: any,
   triageRunId: number
 ) {
-  // Preload context data required by agents
-  const profile = await prisma.customer.findUnique({
-    where: { id: Number(customerId) },
+  // Load the triage run to get the alert and suspect transaction
+  const triageRun = await prisma.triageRun.findUnique({
+    where: { id: triageRunId },
+    include: {
+      alert: {
+        include: {
+          suspect_txn: true,
+        },
+      },
+    },
   })
-  const recent = await listCustomerTransactions(Number(customerId), {
-    limit: 50,
-  })
-  context.profile = profile
+
+  // Preload context data required by agents (guard invalid IDs)
+  const numericCustomerId = Number(customerId)
+  let profile: any = null
+  let recent: { items: any[] } = { items: [] }
+  if (Number.isFinite(numericCustomerId) && numericCustomerId > 0) {
+    profile = await prisma.customer.findUnique({
+      where: { id: numericCustomerId },
+    })
+    try {
+      recent = await listCustomerTransactions(numericCustomerId, { limit: 50 })
+    } catch {
+      recent = { items: [] }
+    }
+  } else {
+    logger.warn({ runId: publicRunId, event: "invalid_customer_id", customerId })
+  }
+  // Merge profile from context (if provided) with database profile
+  context.profile = context.profile ? { ...profile, ...context.profile } : profile
   context.recentTx = recent.items
   context.recentTransactions = recent.items
+  // Add suspect transaction from alert as the primary transaction to analyze
+  if (triageRun?.alert?.suspect_txn) {
+    context.suspectTransaction = triageRun.alert.suspect_txn
+    // Insert suspect transaction at the beginning of recentTransactions if not already there
+    const hasSuspect = context.recentTransactions.some(
+      (t: any) => t.id === triageRun.alert.suspect_txn.id
+    )
+    if (!hasSuspect) {
+      context.recentTransactions = [
+        triageRun.alert.suspect_txn,
+        ...context.recentTransactions,
+      ]
+    }
+  }
 
   const plan = [
     { name: "riskSignals", fn: riskSignals },
@@ -54,7 +90,7 @@ export async function runPlan(
   for (const { name, fn } of plan) {
     const res = await runAgent(publicRunId, triageRunId, name, fn, {
       runId: publicRunId,
-      customerId,
+      customerId: String(numericCustomerId || ""),
       context,
     })
     if (!res.ok) {
@@ -95,8 +131,8 @@ export async function runPlan(
 
   const latencyMs = Date.now() - startedAt
   await completeTriageRun(triageRunId, {
-    risk: finalRisk,
-    reasons: finalReasons,
+    risk: decideResult.risk,  // Use the computed risk, not the raw finalRisk
+    reasons: decideResult.reasons,  // Use the computed reasons
     fallbackUsed: anyFallback,
     latencyMs,
     endedAt: new Date(),

@@ -1,0 +1,14 @@
+{
+  "name": "Duplicate Pending vs Captured",
+  "description": "Explain preauth vs capture; ensure no dispute and risk low/medium.",
+  "cases": [
+    {
+      "id": "duplicate-explained",
+      "category": "duplicate_auth_vs_capture",
+      "input": { "triage": { "alertId": 2001, "customerId": 42 } },
+      "expected": { "risk": "low|medium", "dispute": false }
+    }
+  ]
+}
+
+
