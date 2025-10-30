@@ -21,3 +21,25 @@ export async function resetCircuit(agent: string) {
   const key = CIRCUIT_PREFIX + agent + ":open"
   await redis.del(key)
 }
+
+// Idempotency helpers
+const IDEM_PREFIX = "idem:"
+
+export async function getIdempotentResponse(scope: string, key: string) {
+  const raw = await redis.get(IDEM_PREFIX + scope + ":" + key)
+  return raw ? JSON.parse(raw) : null
+}
+
+export async function setIdempotentResponse(
+  scope: string,
+  key: string,
+  value: unknown,
+  ttlSeconds = 600
+) {
+  await redis.set(
+    IDEM_PREFIX + scope + ":" + key,
+    JSON.stringify(value),
+    "EX",
+    ttlSeconds
+  )
+}
