@@ -2,6 +2,12 @@
 
 Full‑stack console to ingest/explore transactions, stream triage, and execute safe actions with guardrails.
 
+## Quick Product Demo
+
+https://github.com/user-attachments/assets/a0ca38f6-05ee-4344-9e91-cb6ca3586dd6
+
+
+
 ## Run (≤3 commands)
 
 ```bash
