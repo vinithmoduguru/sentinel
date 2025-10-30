@@ -17,6 +17,15 @@ export async function startTriageRun(
       latency_ms: 0,
     },
   })
+  // Mark the alert as acknowledged when triage starts so the list reflects activity
+  try {
+    await prisma.alert.update({
+      where: { id: alertId },
+      data: { status: "ACKNOWLEDGED" },
+    })
+  } catch {
+    // best effort; do not block triage run creation
+  }
   return { id: run.id, startedAt }
 }
 

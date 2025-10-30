@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useTriageStream, type TriageEvent } from "@/hooks/useTriageStream"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,9 +11,9 @@ import LiveRegion from "@/components/LiveRegion"
 import { AlertTriangle, CheckCircle2, Clock, XCircle } from "lucide-react"
 import ActionsPanel from "./ActionsPanel"
 
-type Props = { runId?: string; customerId?: number; onClose: () => void }
+type Props = { runId?: string; customerId?: number; onClose: () => void; onFinalized?: () => void }
 
-export function TriageDrawer({ runId, customerId, onClose }: Props) {
+export function TriageDrawer({ runId, customerId, onClose, onFinalized }: Props) {
   const { events, loading, error } = useTriageStream(runId)
   const final = useMemo(() => {
     for (let i = events.length - 1; i >= 0; i--) {
@@ -22,6 +22,13 @@ export function TriageDrawer({ runId, customerId, onClose }: Props) {
     }
     return undefined
   }, [events])
+  const finalizedNotifiedRef = useRef(false)
+  useEffect(() => {
+    if (final && !finalizedNotifiedRef.current) {
+      finalizedNotifiedRef.current = true
+      onFinalized?.()
+    }
+  }, [final, onFinalized])
   // best-effort extraction of current risk/reasons
   const lastRisk = useMemo(() => {
     const rev = [...events].reverse()

@@ -64,7 +64,8 @@ export default function AlertsPage() {
       setSelectedCustomerId(cid)
       setDrawerOpen(true)
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to start triage"
+      const message =
+        error instanceof Error ? error.message : "Failed to start triage"
       alert(`Error starting triage: ${message}`)
       console.error("Triage start error:", error)
     }
@@ -277,7 +278,11 @@ export default function AlertsPage() {
                         size="sm"
                         onClick={() => openTriage(alert)}
                         disabled={alert.canOpenTriage === false}
-                        title={alert.canOpenTriage === false ? "Triage not available for this alert" : "Start triage analysis"}>
+                        title={
+                          alert.canOpenTriage === false
+                            ? "Triage not available for this alert"
+                            : "Start triage analysis"
+                        }>
                         Open Triage
                       </Button>
                     </div>
@@ -306,7 +311,15 @@ export default function AlertsPage() {
         <TriageDrawer
           runId={runId}
           customerId={selectedCustomerId}
-          onClose={() => setDrawerOpen(false)}
+          onClose={() => {
+            setDrawerOpen(false)
+            setRunId(undefined)
+            fetchAlerts(true)
+          }}
+          onFinalized={() => {
+            // Refresh as soon as a decision is finalized
+            fetchAlerts(true)
+          }}
         />
       )}
     </div>
