@@ -10,7 +10,8 @@ import { fallback } from "./fallback.js"
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export async function runAgent(
-  runId: string,
+  publicRunId: string,
+  triageRunId: number,
   name: string,
   fn: AgentFn,
   input: AgentInput,
@@ -20,7 +21,7 @@ export async function runAgent(
   let attempt = 0
 
   if (await getCircuitState(name)) {
-    logger.warn({ runId, name, event: "circuit_open" })
+    logger.warn({ runId: publicRunId, name, event: "circuit_open" })
     return fallback(name, input, "circuit_open")
   }
 
@@ -35,10 +36,15 @@ export async function runAgent(
       ])
 
       result.durationMs = Date.now() - start
-      await writeTrace(runId, name, result)
-      logger.info({ runId, name, ok: result.ok, event: "agent_complete" })
+      await writeTrace(triageRunId, name, result)
+      logger.info({
+        runId: publicRunId,
+        name,
+        ok: result.ok,
+        event: "agent_complete",
+      })
       incrementMetric("tool_call_total", { tool: name, ok: "true" })
-      publishEvent(runId, {
+      publishEvent(publicRunId, {
         type: "tool_update",
         step: name,
         ok: true,
@@ -46,9 +52,14 @@ export async function runAgent(
       })
       return result
     } catch (err: any) {
-      logger.error({ runId, name, event: "agent_error", error: err.message })
+      logger.error({
+        runId: publicRunId,
+        name,
+        event: "agent_error",
+        error: err.message,
+      })
       incrementMetric("tool_call_total", { tool: name, ok: "false" })
-      publishEvent(runId, {
+      publishEvent(publicRunId, {
         type: "tool_update",
         step: name,
         ok: false,
