@@ -22,13 +22,34 @@ services:
     ports:
       - "6379:6379"
 
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://sentinel:sentinel@postgres:5432/sentinel_db
+      TXN_COUNT: "200000"
+      BATCH_SIZE: "10000"
+    volumes:
+      - ./backend:/app
+      - ./fixtures:/app/fixtures
+    command: sh -lc "npm ci && npm run seed:compose"
+    restart: "no" # Run once and exit
+
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      seed:
+        condition: service_completed_successfully
     ports:
       - "4000:4000"
     environment:
@@ -42,7 +63,7 @@ services:
     volumes:
       - ./backend:/app
       - ./fixtures:/app/fixtures
-    command: sh -c "npm install && npm run dev"
+    command: sh -lc "npm ci && npm run dev"
 
   web:
     build:

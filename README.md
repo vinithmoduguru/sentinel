@@ -1,273 +1,158 @@
-# Sentinel Support: Full-Stack Fintech Case Resolution
+# Sentinel Support
 
-A production-grade case-resolution console for support agents to investigate customer activity, generate AI insights, and execute safe actions via multi-agent triage with policy guardrails and observability.
+Full‑stack console to ingest/explore transactions, stream triage, and execute safe actions with guardrails.
 
-## 📚 Documentation
-
-- **[UI Improvements Summary](UI_IMPROVEMENTS.md)** - Complete overview of recent UI polish and bug fixes
-- **[RBAC Usage Guide](RBAC_USAGE_GUIDE.md)** - How to use the role selector and perform actions
-- **[Architecture Decisions](ADR.md)** - Key technical decisions and trade-offs
-- **[Testing Summary](TESTING_SUMMARY.md)** - Test results and acceptance scenarios
-
-## Quick Start (4 Commands)
+## Run (≤3 commands)
 
 ```bash
-# 1. Start all services
-docker compose up -d
-
-# 2. Seed database with test data
-cd backend && npm run seed:fast
-
-# 3. Select your role in the UI
-# Open http://localhost:5173 and click "Agent" or "Lead" in the header
-
-# 4. Access the application
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:4000
-# Metrics: http://localhost:4000/metrics
+docker compose up                     # pg + redis + seed + api + web
+open http://localhost:5173            # UI (API http://localhost:4000, metrics /metrics)
 ```
 
-> ⚠️ **Important**: Before performing any actions, you must select a role (Agent or Lead) in the header. See [RBAC Usage Guide](RBAC_USAGE_GUIDE.md) for details.
+**Note:** A dedicated `seed` service runs automatically before the API starts:
+- 10,000 customers with cards and accounts
+- 200,000 transactions (configurable via `TXN_COUNT` env var in `docker-compose.yml`)
+- 500 alerts with triage runs and agent traces
+- 200 cases with case events
+- KB docs and policy documents
+- **Deterministic eval fixtures** with real database IDs in `/fixtures/evals/`
+
+**View seed logs:**
+```bash
+docker compose logs seed              # View seed output
+docker compose logs -f seed           # Follow seed logs in real-time
+```
+
+**Re-run seed only:**
+```bash
+docker compose up seed --force-recreate
+```
+
+### Seed Configuration
+
+Control seed data volume via environment variables in the `seed` service in `docker-compose.yml`:
+
+```yaml
+seed:
+  environment:
+    TXN_COUNT: "200000"    # Total transactions to generate (default: 1M)
+    BATCH_SIZE: "10000"    # Batch size for bulk inserts (default: 5k)
+```
+
+Or run seed manually with custom values:
+
+```bash
+# Fast seed (200k transactions)
+cd backend && npm run seed:fast
+
+# Full 1M transactions
+npm run seed:1m
+
+# Custom count
+TXN_COUNT=500000 BATCH_SIZE=10000 npm run seed
+```
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        React Frontend (Vite)                    │
-│  /dashboard  /alerts  /customer/:id  /evals                    │
-└────────────────────────────┬────────────────────────────────────┘
-                             │ HTTP/SSE
-┌────────────────────────────┴────────────────────────────────────┐
-│                   Express API (TypeScript)                      │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Multi-Agent Orchestrator (Planner + Executor)           │  │
-│  │  ├─ Insights Agent   (spend patterns, anomalies)         │  │
-│  │  ├─ Fraud Agent      (velocity, device, MCC rarity)      │  │
-│  │  ├─ KB Agent         (policy citations)                  │  │
-│  │  ├─ Compliance Agent (OTP/RBAC gates)                    │  │
-│  │  └─ Summarizer       (customer message + internal note)  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Middleware: Rate Limit • Idempotency • Auth • CSP      │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└────────────┬───────────────────────────┬────────────────────────┘
-             │                           │
-    ┌────────┴────────┐         ┌────────┴────────┐
-    │  PostgreSQL     │         │     Redis       │
-    │  (Prisma ORM)   │         │  (rate limit +  │
-    │  Transactions   │         │   idempotency)  │
-    │  Customers      │         │                 │
-    │  Alerts, Cases  │         └─────────────────┘
-    └─────────────────┘
++---------------------+       HTTP + SSE        +-----------------------------+
+|   React (Vite)      | <---------------------> |   Express API (TypeScript)  |
+| /dashboard /alerts  |                         | - Orchestrator (planner/exe)|
+| /customer /evals    |                         |   agents: insights,risk,kb   |
+| Triage Drawer (SSE) |                         |   compliance,summarizer      |
++---------------------+                         | - Middleware: rate,idem,auth |
+                                              |   apiKey(agent/lead), csp     |
+                                              | - Metrics (/metrics), logs     |
+                                              +---------------+---------------+
+                                                              |
+                                                              v
+                                   +----------------+       +------------------+
+                                   | Postgres       |       | Redis            |
+                                   | Prisma models  |       | rate-limit,idem. |
+                                   +----------------+       +------------------+
+                                                              ^
+                                                              |
+                                    +-------------------------+------------------+
+                                    |                 Seed Service                |
+                                    | customers/cards/txns/alerts/cases/kb        |
+                                    | deterministic evals -> /fixtures/evals      |
+                                    +---------------------------------------------+
 ```
 
-## Key Features
+## Key trade-offs
 
-### Frontend
-- **Dashboard**: Real-time KPIs (alerts in queue, disputes opened, avg triage latency)
-- **Alerts Queue**: Virtualized table (handles 2k+ rows), risk filtering, pagination
-- **Customer Detail**: Transaction timeline, category spend charts, merchant mix, anomalies
-- **Triage Drawer**: SSE streaming updates, full keyboard navigation (ESC, Tab, Enter)
-- **Evals Page**: Run acceptance tests, view pass/fail rates, confusion matrix
+- Keyset pagination over offset: stable cursors on `(customer_id, ts)`, fast seeks.
+- SSE for triage streaming: simple HTTP and auto‑reconnect; one‑way is enough.
+- Prisma ORM: type‑safe and migrations; raw SQL used where needed.
+- Redis for rate‑limit + idempotency: atomic, shared; fail‑open on outage.
+- Multi‑agent pipeline: bounded timeouts (≈1s/tool, ≤5s flow); clearer responsibilities.
+- Zod validation: runtime schemas for agent I/O; small overhead acceptable.
 
-### Backend
-- **Multi-Agent Pipeline**: Bounded plan execution with timeouts (1s per tool, 5s flow budget)
-- **Rate Limiting**: Token bucket (5 req/s), 429 with Retry-After header
-- **Idempotency**: Header-based replay protection (Redis TTL)
-- **Security**: CSP headers, API key auth (agent/lead RBAC), PII redaction, input sanitization
-- **Observability**: Prometheus metrics (/metrics), structured JSON logs, agent traces
-- **Actions**: Freeze card (OTP flow), open dispute, contact customer (email/SMS mock)
+## Eval Fixtures & Testing
 
-## Performance Benchmarks
+The seed script automatically generates **deterministic eval fixtures** that match the seeded data:
 
-- **p95 latency**: ≤100ms for `/api/customer/:id/transactions?last=90d` with 1M rows
-- **Query optimization**: Keyset pagination, composite indexes on `(customer_id, ts DESC)`
-- **Virtualization**: React tables handle 2k+ rows without jank
+### Generated Fixtures
 
-```sql
--- Explain Analyze example (1M rows)
-EXPLAIN ANALYZE 
-SELECT * FROM transactions 
-WHERE customer_id = 123 AND ts >= NOW() - INTERVAL '90 days'
-ORDER BY ts DESC LIMIT 50;
+All fixtures are written to `/fixtures/evals/` with actual database IDs:
 
--- Index Scan using idx_customer_ts on transactions (cost=0.42..120.45 rows=50)
--- Planning Time: 0.15ms | Execution Time: 45ms
-```
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/ingest/transactions` | POST | Ingest transactions (CSV/JSON), dedupe by `(customerId, txnId)` |
-| `/api/customer/:id/transactions` | GET | Keyset paginated transactions |
-| `/api/insights/:customerId/summary` | GET | Spend categories, trends, anomalies |
-| `/api/triage` | POST | Start triage run, returns `runId` |
-| `/api/triage/:runId/stream` | GET | SSE stream of triage events |
-| `/api/action/freeze-card` | POST | Freeze card (OTP required unless lead) |
-| `/api/action/open-dispute` | POST | Create dispute case with KB citation |
-| `/api/action/contact-customer` | POST | Mock email/SMS notification |
-| `/api/kb/search?q=` | GET | Search knowledge base |
-| `/api/alerts` | GET | Paginated alerts queue |
-| `/api/dashboard/kpis` | GET | Dashboard metrics |
-| `/metrics` | GET | Prometheus metrics |
-
-## Development
-
-### Prerequisites
-- Node.js 18+
-- Docker & Docker Compose
-- PostgreSQL 14+
-- Redis 7+
-
-### Local Setup
-
-```bash
-# Clone and install
-git clone <repo>
-cd sentinel
-
-# Start infrastructure
-docker compose up -d postgres redis
-
-# Backend setup
-cd backend
-cp .env.example .env  # Edit DATABASE_URL, REDIS_URL
-npm install
-npm run prisma:generate
-npm run prisma:migrate
-npm run seed:fast  # 200k transactions
-
-# Start backend
-npm run dev  # http://localhost:3000
-
-# Frontend setup (separate terminal)
-cd front-end/vite-project
-npm install
-npm run dev  # http://localhost:5173
-```
+- `freeze_otp.json` - OTP flow validation (pending → success)
+- `dispute.json` - Dispute creation with KB citations
+- `duplicate_auth_vs_capture.json` - Preauth vs capture scenarios
+- `ambiguous_merchants.json` - Merchant disambiguation via Insights API
+- `device_change.json` - New device detection in triage
+- `fallback_path.json` - Circuit breaker fallback behavior
+- `risk_timeout_fallback.json` - Risk tool timeout handling
+- `travel_window.json` - Foreign country transaction detection
+- `pii_redaction.json` - PAN redaction in traces
+- `rate_limit.json` - 429 rate limiting behavior
+- `performance_90d.json` - 90-day query performance benchmarks
+- `readme.json` - Documentation of eval categories
+- `_eval_reference.json` - Reference file with all eval entity IDs
 
 ### Running Evals
 
 ```bash
-cd backend
-npm run eval
+cd backend && npm run eval
 ```
 
-Output:
-```
-============================================================
-SENTINEL EVAL REPORT
-============================================================
+**Output includes:**
+- Task success rate, fallback rate by tool
+- Agent latency p50/p95
+- Risk confusion matrix (LOW|MEDIUM|HIGH)
+- Top policy denials
 
-📊 Summary:
-   Total cases: 12
-   ✅ Passed: 11
-   ❌ Failed: 1
-   Success rate: 91.7%
+### Why Auto-Generated?
 
-⏱️  Latency:
-   p50: 450ms
-   p95: 890ms
+✅ **IDs match database** - No hardcoded IDs that break on fresh setups  
+✅ **Works anywhere** - Anyone can run `docker-compose up` and evals pass  
+✅ **Always fresh** - Regenerated on each seed to match current data  
+✅ **Deterministic scenarios** - Specific merchants (ABC Mart, QuickCab) for reliable testing
 
-🔄 Fallback rate: 8.3%
+**Note:** Eval fixtures are **overwritten** on each seed run. Custom test cases should use different filenames (e.g., `custom_*.json`).
 
-🎯 Risk Distribution:
-   LOW: 3
-   MEDIUM: 6
-   HIGH: 3
-============================================================
-```
+## Performance (90d keyset on 1M rows)
 
-## Key Trade-offs
-
-### 1. Keyset Pagination over Offset
-- **Why**: Stable cursors even with inserts; O(1) page fetch vs O(n) for offset
-- **Trade-off**: Cannot jump to arbitrary pages; only next/prev
-
-### 2. SSE over WebSocket
-- **Why**: Simpler protocol, auto-reconnect, HTTP/2 multiplexing, no CORS preflight
-- **Trade-off**: Unidirectional only; sufficient for streaming triage updates
-
-### 3. Prisma ORM
-- **Why**: Type-safe queries, migrations, multi-DB support
-- **Trade-off**: Some advanced queries require raw SQL (e.g., full-text search)
-
-### 4. Redis for Rate Limiting
-- **Why**: Atomic INCR, TTL, shared state across instances
-- **Trade-off**: External dependency; fallback to in-memory if Redis down
-
-### 5. Multi-Agent Orchestration
-- **Why**: Separation of concerns, testable agents, circuit breakers
-- **Trade-off**: Added latency vs monolithic; mitigated by 1s timeouts
-
-### 6. Schema Validation (Zod)
-- **Why**: Runtime validation, catch malformed agent outputs early
-- **Trade-off**: Performance overhead (~5-10ms); annotates traces without failing
-
-## Environment Variables
-
-```bash
-# Backend (.env)
-DATABASE_URL=postgresql://user:pass@localhost:5432/sentinel_db
-REDIS_URL=redis://localhost:6379
-PORT=3000
-NODE_ENV=development
-LOG_LEVEL=info
-FRONTEND_ORIGIN=http://localhost:5173
-
-# API Keys (for testing)
-API_KEY_AGENT=agent_secret_123
-API_KEY_LEAD=lead_secret_456
+```sql
+EXPLAIN ANALYZE
+SELECT id, ts, amount_cents
+FROM transactions
+WHERE customer_id = $1 AND ts >= NOW() - INTERVAL '90 days'
+ORDER BY ts DESC, id DESC
+LIMIT 50;
+-- Index Scan on (customer_id, ts DESC); planning ~0.2ms, execution ~45ms (target p95 ≤100ms)
 ```
 
-## Docker Compose
+## Postman Collection
 
-```bash
-# Start all services
-docker compose up -d
+- File: `postman_collections.json` (repo root)
+- Import into Postman and set variables:
+  - `api_key` (default `agent_secret_123`), `idem_key` (use `{{$guid}}`), `customer_id`, `alert_id`, `card_id`, `txn_id`.
 
-# View logs
-docker compose logs -f api
+## Eval Report
 
-# Rebuild
-docker compose up --build
-
-# Stop
-docker compose down
-```
-
-## Project Structure
-
-```
-sentinel/
-├── backend/           # Node.js + Express API
-│   ├── prisma/        # Schema + migrations
-│   ├── src/
-│   │   ├── agents/    # Insights, Fraud, KB, Compliance, Summarizer
-│   │   ├── orchestrator/  # Planner + Executor
-│   │   ├── routes/    # Express routes
-│   │   ├── services/  # Business logic
-│   │   ├── middleware/  # Rate limit, auth, idempotency
-│   │   └── utils/     # Logger, metrics, redactor
-│   └── fixtures/      # Seed data + evals
-├── front-end/vite-project/  # React + TypeScript
-│   └── src/
-│       ├── pages/     # Dashboard, Alerts, Customer, Evals
-│       └── components/  # TriageDrawer, UI components
-├── docker-compose.yml
-├── ADR.md             # Architecture Decision Records
-└── requests.http      # API collection
-```
-
-## Testing & Validation
-
-- **Evals**: 12+ golden test cases covering OTP flow, disputes, fallbacks, PII redaction
-- **Metrics**: Prometheus counters/histograms for latency, tool calls, fallbacks, rate limits
-- **Audit Logs**: All actions append `CaseEvent` with actor, action, redacted payload
-- **Security**: PAN-like sequences (13-19 digits) redacted in UI/logs/traces
-
-## License
-
-Proprietary - Internal Use Only
+- File: `EVAL_REPORT.md`
+- To regenerate locally:
+  - `cd backend && npm ci && npm run eval`
+- Report includes: totals, pass rate, p50/p95 latency, fallback rate, risk confusion matrix, top policy denials.
 

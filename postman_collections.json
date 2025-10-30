@@ -1,0 +1,177 @@
+{
+  "info": {
+    "name": "Sentinel API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for Sentinel Support APIs"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:4000/health",
+          "host": ["http://localhost:4000"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Metrics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:4000/metrics",
+          "host": ["http://localhost:4000"],
+          "path": ["metrics"]
+        }
+      }
+    },
+    {
+      "name": "Ingest Transactions (JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{idem_key}}" },
+          { "key": "x-api-key", "value": "{{api_key}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:4000/api/ingest/transactions",
+          "host": ["http://localhost:4000"],
+          "path": ["api", "ingest", "transactions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"customerId\": 1,\n      \"txnId\": \"T-123\",\n      \"mcc\": \"5411\",\n      \"merchant\": \"ABC Mart\",\n      \"amountCents\": 499900,\n      \"currency\": \"INR\",\n      \"ts\": \"2025-10-01T10:00:00Z\"\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Customer Transactions (keyset)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:4000/api/customer/{{customer_id}}/transactions?from=&to=&cursor=&limit=50",
+          "host": ["http://localhost:4000"],
+          "path": ["api", "customer", "{{customer_id}}", "transactions"],
+          "query": [
+            { "key": "from", "value": "" },
+            { "key": "to", "value": "" },
+            { "key": "cursor", "value": "" },
+            { "key": "limit", "value": "50" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Insights Summary",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:4000/api/insights/{{customer_id}}/summary",
+          "host": ["http://localhost:4000"],
+          "path": ["api", "insights", "{{customer_id}}", "summary"]
+        }
+      }
+    },
+    {
+      "name": "Start Triage",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "x-api-key", "value": "{{api_key}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:4000/api/triage",
+          "host": ["http://localhost:4000"],
+          "path": ["api", "triage"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"alertId\": {{alert_id}},\n  \"customerId\": {{customer_id}}\n}"
+        }
+      }
+    },
+    {
+      "name": "Triage Stream (SSE)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:4000/api/triage/{{run_id}}/stream",
+          "host": ["http://localhost:4000"],
+          "path": ["api", "triage", "{{run_id}}", "stream"]
+        }
+      }
+    },
+    {
+      "name": "Action: Freeze Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "x-api-key", "value": "{{api_key}}" },
+          { "key": "Idempotency-Key", "value": "{{idem_key}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:4000/api/action/freeze-card",
+          "host": ["http://localhost:4000"],
+          "path": ["api", "action", "freeze-card"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cardId\": {{card_id}},\n  \"otp\": \"123456\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Action: Open Dispute",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "x-api-key", "value": "{{api_key}}" },
+          { "key": "Idempotency-Key", "value": "{{idem_key}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:4000/api/action/open-dispute",
+          "host": ["http://localhost:4000"],
+          "path": ["api", "action", "open-dispute"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"txnId\": {{txn_id}},\n  \"reasonCode\": \"10.4\",\n  \"confirm\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "KB Search",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:4000/api/kb/search?q={{query}}",
+          "host": ["http://localhost:4000"],
+          "path": ["api", "kb", "search"],
+          "query": [{ "key": "q", "value": "{{query}}" }]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "api_key", "value": "agent_secret_123" },
+    { "key": "idem_key", "value": "{{$guid}}" },
+    { "key": "customer_id", "value": "1" },
+    { "key": "alert_id", "value": "1" },
+    { "key": "run_id", "value": "{{run_id_from_start}}" },
+    { "key": "card_id", "value": "1" },
+    { "key": "txn_id", "value": "1" },
+    { "key": "query", "value": "dispute" }
+  ]
+}
