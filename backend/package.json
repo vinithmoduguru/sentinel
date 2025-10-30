@@ -14,9 +14,10 @@
     "prisma:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
     "prisma:studio": "prisma studio --schema=prisma/schema.prisma",
     "generate:txns": "tsx scripts/generateTransactions.ts",
-  "seed": "tsx prisma/seed.ts",
-  "seed:fast": "TXN_COUNT=200000 BATCH_SIZE=10000 tsx prisma/seed.ts",
-  "seed:1m": "TXN_COUNT=1000000 BATCH_SIZE=20000 tsx prisma/seed.ts",
+    "seed": "tsx prisma/seed.ts",
+    "seed:fast": "TXN_COUNT=200000 BATCH_SIZE=10000 tsx prisma/seed.ts",
+    "seed:1m": "TXN_COUNT=1000000 BATCH_SIZE=20000 tsx prisma/seed.ts",
+    "eval": "tsx src/scripts/runEvals.ts",
     "test": "echo \"No tests configured\" && exit 0"
   },
   "keywords": [],

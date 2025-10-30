@@ -2,6 +2,7 @@ import { Router } from "express"
 import {
   openDisputeHandler,
   freezeCardHandler,
+  contactCustomerHandler,
 } from "../controllers/actionsController.js"
 import { idempotency } from "../middleware/idempotency.js"
 import { apiKeyAuth, requireRole } from "../middleware/apiKey.js"
@@ -25,6 +26,14 @@ router.post(
   requireRole("agent"),
   idempotency("open-dispute"),
   openDisputeHandler
+)
+
+// POST /api/action/contact-customer - Contact customer via email/SMS
+router.post(
+  "/contact-customer",
+  requireRole("agent"),
+  idempotency("contact-customer"),
+  contactCustomerHandler
 )
 
 export default router

@@ -215,7 +215,7 @@ export async function runEvalsHandler(_req: Request, res: Response) {
                 (run.risk.toLowerCase() === "low" ||
                   run.risk.toLowerCase() === "medium")
               const ok = riskOk && !c?.expected?.dispute
-              results.push({ file: f, id, category, passed: ok })
+              results.push({ file: f, id, category, passed: ok || false })
             } else {
               results.push({ file: f, id, category, passed: false })
             }

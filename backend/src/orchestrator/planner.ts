@@ -70,6 +70,7 @@ export async function runPlan(
   ]
 
   const startedAt = Date.now()
+  const FLOW_BUDGET_MS = 5000 // 5 seconds total budget
   let anyFallback = false
   let finalRisk: string | null = null
   let finalReasons: any | null = null
@@ -88,6 +89,18 @@ export async function runPlan(
   })
 
   for (const { name, fn } of plan) {
+    // Check flow budget before running each agent
+    const elapsed = Date.now() - startedAt
+    if (elapsed >= FLOW_BUDGET_MS) {
+      logger.warn({
+        runId: publicRunId,
+        event: "flow_budget_exceeded",
+        elapsed_ms: elapsed,
+        budget_ms: FLOW_BUDGET_MS,
+      })
+      break // Abort remaining steps
+    }
+
     const res = await runAgent(publicRunId, triageRunId, name, fn, {
       runId: publicRunId,
       customerId: String(numericCustomerId || ""),

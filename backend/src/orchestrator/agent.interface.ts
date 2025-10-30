@@ -10,6 +10,7 @@ export type AgentOutput = {
   data?: any
   error?: string
   fallbackUsed?: boolean
+  schemaValidation?: { valid: boolean; error?: string }
 }
 
 export type AgentFn = (input: AgentInput) => Promise<AgentOutput>

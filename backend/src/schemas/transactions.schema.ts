@@ -4,6 +4,7 @@ export const transactionSchema = z.object({
   id: z.number().int().positive().optional(),
   customer_id: z.number().int().positive(),
   card_id: z.number().int().positive().optional(),
+  txn_id: z.string().max(255).optional(),
   mcc: z.string().length(4),
   merchant: z.string().max(255),
   amount_cents: z.number().int().nonnegative(),

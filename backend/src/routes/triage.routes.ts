@@ -3,6 +3,7 @@ import { v4 as uuid } from "uuid"
 import { runPlan } from "../orchestrator/planner.js"
 import { startTriageRun } from "../services/triageService.js"
 import { logger } from "../utils/logger.js"
+import { sanitizeContext } from "../utils/sanitizer.js"
 
 const router = Router()
 const clients = new Map<string, Response>()
@@ -16,12 +17,15 @@ router.post("/", async (req, res) => {
     return
   }
 
+  // Sanitize user context to prevent prompt injection
+  const sanitizedContext = context ? sanitizeContext(context) : {}
+
   res.json({ runId })
 
   try {
     const { id: triageRunId } = await startTriageRun(alertId)
     // start orchestration async with both IDs
-    runPlan(runId, customerId, context, triageRunId)
+    runPlan(runId, customerId, sanitizedContext, triageRunId)
   } catch (err: any) {
     // best-effort logging; response already sent
     logger.error({

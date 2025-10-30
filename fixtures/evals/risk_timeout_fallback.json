@@ -5,10 +5,14 @@
     {
       "id": "risk-timeout",
       "category": "risk_timeout",
-      "input": { "triage": { "alertId": 2002, "customerId": 42, "simulate": { "riskSignals": "timeout" } } },
+      "input": {
+        "triage": {
+          "alertId": 2002,
+          "customerId": 42,
+          "simulate": { "riskSignals": "timeout" }
+        }
+      },
       "expected": { "fallback_used": true, "risk": "low|medium" }
     }
   ]
 }
-
-

@@ -147,12 +147,12 @@ export const insights: AgentFn = async (input) => {
     
     for (let i = 0; i < merchantNames.length; i++) {
       const m1 = merchantNames[i]
-      if (grouped.has(m1)) continue
+      if (!m1 || grouped.has(m1)) continue
       
       const similar: string[] = [m1]
       for (let j = i + 1; j < merchantNames.length; j++) {
         const m2 = merchantNames[j]
-        if (grouped.has(m2)) continue
+        if (!m2 || grouped.has(m2)) continue
         
         // Check for similarity: same prefix/suffix, or edit distance < 3
         const commonPrefix = getCommonPrefix(m1.toLowerCase(), m2.toLowerCase())
@@ -169,10 +169,13 @@ export const insights: AgentFn = async (input) => {
       
       if (similar.length > 1) {
         grouped.add(m1)
-        ambiguousMerchants.push({
-          group: similar[0],
-          merchants: similar,
-        })
+        const firstSimilar = similar[0]
+        if (firstSimilar) {
+          ambiguousMerchants.push({
+            group: firstSimilar,
+            merchants: similar,
+          })
+        }
       }
     }
 

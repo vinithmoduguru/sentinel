@@ -5,10 +5,14 @@
     {
       "id": "pan-redacted",
       "category": "pii_redaction",
-      "input": { "triage": { "alertId": 2003, "customerId": 42, "inject": "4111111111111111" } },
+      "input": {
+        "triage": {
+          "alertId": 2003,
+          "customerId": 42,
+          "inject": "4111111111111111"
+        }
+      },
       "expected": { "redaction": true }
     }
   ]
 }
-
-

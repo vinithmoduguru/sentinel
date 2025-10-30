@@ -1,10 +1,50 @@
 [
-  { "id": 2001, "customer_id": 42, "suspect_txn_id": 1001, "created_at": "2025-10-28T10:00:00.000Z", "risk": "LOW", "status": "OPEN" },
-  { "id": 2002, "customer_id": 42, "suspect_txn_id": 1002, "created_at": "2025-10-28T11:00:00.000Z", "risk": "MEDIUM", "status": "OPEN" },
-  { "id": 2003, "customer_id": 42, "suspect_txn_id": 1003, "created_at": "2025-10-28T12:00:00.000Z", "risk": "HIGH", "status": "OPEN" },
-  { "id": 2004, "customer_id": 42, "suspect_txn_id": 1004, "created_at": "2025-10-28T13:00:00.000Z", "risk": "MEDIUM", "status": "OPEN" },
-  { "id": 2005, "customer_id": 42, "suspect_txn_id": 1005, "created_at": "2025-10-28T14:00:00.000Z", "risk": "MEDIUM", "status": "OPEN" },
-  { "id": 2006, "customer_id": 42, "suspect_txn_id": 1006, "created_at": "2025-10-28T15:00:00.000Z", "risk": "LOW", "status": "OPEN" }
+  {
+    "id": 2001,
+    "customer_id": 42,
+    "suspect_txn_id": 1001,
+    "created_at": "2025-10-28T10:00:00.000Z",
+    "risk": "LOW",
+    "status": "OPEN"
+  },
+  {
+    "id": 2002,
+    "customer_id": 42,
+    "suspect_txn_id": 1002,
+    "created_at": "2025-10-28T11:00:00.000Z",
+    "risk": "MEDIUM",
+    "status": "OPEN"
+  },
+  {
+    "id": 2003,
+    "customer_id": 42,
+    "suspect_txn_id": 1003,
+    "created_at": "2025-10-28T12:00:00.000Z",
+    "risk": "HIGH",
+    "status": "OPEN"
+  },
+  {
+    "id": 2004,
+    "customer_id": 42,
+    "suspect_txn_id": 1004,
+    "created_at": "2025-10-28T13:00:00.000Z",
+    "risk": "MEDIUM",
+    "status": "OPEN"
+  },
+  {
+    "id": 2005,
+    "customer_id": 42,
+    "suspect_txn_id": 1005,
+    "created_at": "2025-10-28T14:00:00.000Z",
+    "risk": "MEDIUM",
+    "status": "OPEN"
+  },
+  {
+    "id": 2006,
+    "customer_id": 42,
+    "suspect_txn_id": 1006,
+    "created_at": "2025-10-28T15:00:00.000Z",
+    "risk": "LOW",
+    "status": "OPEN"
+  }
 ]
-
-

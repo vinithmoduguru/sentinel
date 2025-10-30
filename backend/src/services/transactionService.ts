@@ -9,15 +9,32 @@ import type { TransactionInput } from "../schemas/transactions.schema.js"
 export const ingestTransactions = async (transactions: TransactionInput[]) => {
   const results = await prisma.$transaction(async (tx) => {
     const promises = transactions.map(async (t) => {
-      return tx.transaction.upsert({
-        where: {
-          id: t.id ?? 0,
-        },
-        update: {
-          ...t, // overwrite existing record if found
-        },
-        create: t,
-      })
+      // Use composite key (customer_id, txn_id) for deduplication when txn_id is present
+      if (t.txn_id) {
+        return tx.transaction.upsert({
+          where: {
+            customer_id_txn_id: {
+              customer_id: t.customer_id,
+              txn_id: t.txn_id,
+            },
+          },
+          update: {
+            ...t, // overwrite existing record if found
+          },
+          create: t,
+        })
+      } else {
+        // Fallback to id-based upsert if txn_id not provided
+        return tx.transaction.upsert({
+          where: {
+            id: t.id ?? 0,
+          },
+          update: {
+            ...t,
+          },
+          create: t,
+        })
+      }
     })
 
     const upserts = await Promise.all(promises)

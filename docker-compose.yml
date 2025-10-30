@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:15
@@ -38,6 +36,8 @@ services:
       REDIS_URL: redis://redis:6379
       NODE_ENV: development
       EVALS_DIR: /app/fixtures/evals
+      AGENT_API_KEY: agent_secret_123
+      LEAD_API_KEY: lead_secret_456
     # For local development you can mount the source. Remove the volume for production images.
     volumes:
       - ./backend:/app

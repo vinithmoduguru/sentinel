@@ -8,8 +8,11 @@ import actionRoutes from "./routes/actions.routes.js"
 import dashboardRoutes from "./routes/dashboard.routes.js"
 import alertsRoutes from "./routes/alerts.routes.js"
 import evalsRoutes from "./routes/evals.routes.js"
-// import { errorHandler } from "./middleware/errorHandler.js"
+import metricsRoutes from "./routes/metrics.routes.js"
+import { errorHandler } from "./middleware/errorHandler.js"
 import rateLimiter from "./middleware/rateLimiter.js"
+import { requestLogger } from "./middleware/requestLogger.js"
+import { cspHeaders } from "./middleware/csp.js"
 
 // Load environment variables
 dotenv.config()
@@ -19,6 +22,12 @@ const app = express()
 
 // Trust proxy for correct IPs behind proxies
 app.set("trust proxy", 1)
+
+// Request logger and metrics (before rate limiter)
+app.use(requestLogger())
+
+// Security headers (CSP)
+app.use(cspHeaders())
 
 // Rate limiter (global)
 app.use(rateLimiter())
@@ -61,6 +70,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // API Routes
+app.use("/metrics", metricsRoutes)
 app.use("/api/ingest", ingestRoutes)
 app.use("/api/triage", triageRoutes)
 app.use("/api/kb", kbRoutes)
@@ -71,6 +81,6 @@ app.use("/api", customerRoutes)
 app.use("/api/action", actionRoutes)
 
 // Error handling middleware (must be last)
-// app.use(errorHandler)
+app.use(errorHandler)
 
 export default app

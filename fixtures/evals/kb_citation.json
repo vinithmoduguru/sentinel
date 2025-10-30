@@ -5,10 +5,11 @@
     {
       "id": "kb-citation",
       "category": "kb_citation",
-      "input": { "action": "open-dispute", "payload": { "txnId": 1002, "reasonCode": "10.4", "confirm": true } },
+      "input": {
+        "action": "open-dispute",
+        "payload": { "txnId": 1002, "reasonCode": "10.4", "confirm": true }
+      },
       "expected": { "kbCitation": true }
     }
   ]
 }
-
-

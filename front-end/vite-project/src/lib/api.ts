@@ -1,7 +1,15 @@
 const API_BASE =
   (import.meta.env?.VITE_API_BASE as string | undefined) ||
   "http://localhost:4000"
-const API_KEY = (import.meta.env?.VITE_API_KEY as string | undefined) || ""
+
+function getApiKey(): string {
+  // Check localStorage first (set by RoleSelector)
+  const storedKey = localStorage.getItem("sentinel_api_key")
+  if (storedKey) return storedKey
+  
+  // Fall back to env var
+  return (import.meta.env?.VITE_API_KEY as string | undefined) || ""
+}
 
 function generateIdempotencyKey(): string {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
@@ -78,8 +86,9 @@ export async function freezeCard(
   payload: { cardId: number; otp?: string },
   headers?: Record<string, string>
 ) {
+  const apiKey = getApiKey()
   const extra: Record<string, string> = {
-    ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
+    ...(apiKey ? { "X-API-Key": apiKey } : {}),
     "Idempotency-Key": generateIdempotencyKey(),
     ...(headers || {}),
   }
@@ -94,8 +103,9 @@ export async function openDispute(
   payload: { txnId: number; reasonCode: string; confirm: boolean },
   headers?: Record<string, string>
 ) {
+  const apiKey = getApiKey()
   const extra: Record<string, string> = {
-    ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
+    ...(apiKey ? { "X-API-Key": apiKey } : {}),
     "Idempotency-Key": generateIdempotencyKey(),
     ...(headers || {}),
   }

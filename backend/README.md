@@ -45,3 +45,33 @@ Useful scripts
 - `npm start` — run compiled `dist/server.js`
 - `npm run prisma:generate` — generate Prisma client
 - `npm run prisma:migrate` — run Prisma migrations (development)
+
+## API: Alerts Queue
+
+GET `/api/alerts?limit=&cursor=&status=&risk=`
+
+Response shape:
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "createdAt": "2025-10-29T18:20:10.000Z",
+      "risk": "HIGH",
+      "status": "OPEN",
+      "customer": { "id": 42, "name": "Jane D" },
+      "transaction": {
+        "id": 987,
+        "merchant": "ABC Mart",
+        "mcc": "5411",
+        "amountCents": 499900,
+        "currency": "INR",
+        "ts": "2025-10-28T12:00:00.000Z"
+      },
+      "canOpenTriage": true
+    }
+  ],
+  "nextCursor": "opaque"
+}
+```

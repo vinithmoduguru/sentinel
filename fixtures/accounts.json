@@ -1,5 +1,1 @@
-[
-  { "id": 1, "customer_id": 42, "balance_cents": 250000, "currency": "INR" }
-]
-
-
+[{ "id": 1, "customer_id": 42, "balance_cents": 250000, "currency": "INR" }]

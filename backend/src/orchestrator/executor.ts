@@ -6,6 +6,7 @@ import { redactor } from "../utils/redactor.js"
 import { incrementMetric } from "../utils/metrics.js"
 import { getCircuitState, openCircuit } from "../utils/redis.js"
 import { fallback } from "./fallback.js"
+import { validateAgentInput, validateAgentOutput } from "../utils/schemaValidator.js"
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -34,6 +35,23 @@ export async function runAgent(
           setTimeout(() => rej(new Error("timeout")), options.timeoutMs)
         ),
       ])
+
+      // Validate output schema
+      if (result.ok && result.data) {
+        const validation = validateAgentOutput(name, result.data)
+        if (!validation.valid) {
+          logger.warn({
+            runId: publicRunId,
+            name,
+            event: "schema_validation_failed",
+            error: validation.error,
+          })
+          // Annotate result but don't fail the agent
+          result.schemaValidation = { valid: false, error: validation.error }
+        } else {
+          result.schemaValidation = { valid: true }
+        }
+      }
 
       result.durationMs = Date.now() - start
       await writeTrace(triageRunId, name, result)

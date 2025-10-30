@@ -5,10 +5,14 @@
     {
       "id": "circuit-open",
       "category": "fallback_path",
-      "input": { "triage": { "alertId": 2006, "customerId": 42, "simulate": { "riskSignals": "circuit_open" } } },
+      "input": {
+        "triage": {
+          "alertId": 2006,
+          "customerId": 42,
+          "simulate": { "riskSignals": "circuit_open" }
+        }
+      },
       "expected": { "fallback_used": true }
     }
   ]
 }
-
-

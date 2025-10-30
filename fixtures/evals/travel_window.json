@@ -5,10 +5,14 @@
     {
       "id": "country-mismatch",
       "category": "travel_window",
-      "input": { "triage": { "alertId": 2005, "customerId": 42, "context": { "profile": { "country": "IN" } } } },
+      "input": {
+        "triage": {
+          "alertId": 2005,
+          "customerId": 42,
+          "context": { "profile": { "country": "IN" } }
+        }
+      },
       "expected": { "reasons_include": ["foreign country"] }
     }
   ]
 }
-
-
